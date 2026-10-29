@@ -6,7 +6,10 @@
 [![Gemini](https://img.shields.io/badge/AI_Engine-Gemini_3.8_Flash-4285F4.svg?style=flat&logo=google)](https://ai.google.dev)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg?style=flat&logo=python)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Vercel Live](https://img.shields.io/badge/Live_Demo-chronovideo--3u7t.vercel.app-000000.svg?style=flat&logo=vercel)](https://chronovideo-3u7t.vercel.app)
 
+> 🌐 **Live Web Application:** [https://chronovideo-3u7t.vercel.app](https://chronovideo-3u7t.vercel.app)  
+> 
 > **Solving the Technical Video Consumption Bottleneck:**  
 > Students, researchers, and engineers spend hours manually scrubbing through 2-to-3-hour lectures searching for specific derivations, algorithmic proofs, or code walkthroughs.  
 > **ChronoVideo** ingests high-density lectures, performs temporal sliding-window vectorization, detects semantic topic change-points via unsupervised cosine distance clustering, and indexes chunks into a ChromaDB vector store. Users query in natural language to receive instant, synthesised AI answers with **interactive, zero-latency clickable timestamp anchors** (`[▶ 04:49]`) that jump the video to the exact second.
@@ -148,7 +151,8 @@ Add your Google Gemini API key to `backend/.env` for optimal synthesis (the syst
 python run.py
 ```
 Open your browser at:
-- **Web Platform:** [http://localhost:8000](http://localhost:8000)
+- 🌐 **Production Web Platform (Vercel):** [https://chronovideo-3u7t.vercel.app](https://chronovideo-3u7t.vercel.app)
+- **Local Dev Server:** [http://localhost:8000](http://localhost:8000)
 - **Interactive Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
