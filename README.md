@@ -7,8 +7,10 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg?style=flat&logo=python)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Vercel Live](https://img.shields.io/badge/Live_Demo-chronovideo--3u7t.vercel.app-000000.svg?style=flat&logo=vercel)](https://chronovideo-3u7t.vercel.app)
+[![Render Backend](https://img.shields.io/badge/Backend-Render_Live-46E3B7.svg?style=flat&logo=render)](https://chronovideo.onrender.com/docs)
 
 > 🌐 **Live Web Application:** [https://chronovideo-3u7t.vercel.app](https://chronovideo-3u7t.vercel.app)  
+> ⚡ **Cloud Backend API (Render):** [https://chronovideo.onrender.com/docs](https://chronovideo.onrender.com/docs)  
 > 
 > **Solving the Technical Video Consumption Bottleneck:**  
 > Students, researchers, and engineers spend hours manually scrubbing through 2-to-3-hour lectures searching for specific derivations, algorithmic proofs, or code walkthroughs.  
