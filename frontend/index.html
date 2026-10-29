@@ -1,0 +1,4052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChronoVideo — Time-Indexed Video Search</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM: Claude & ChatGPT Warm Dark Aesthetic
+       Warm matte charcoal, subtle soft borders, organic typography, zero neon-blue AI tropes.
+       ========================================================================== */
+    :root {
+      /* Warm Dark Canvas Palette (ChatGPT #171717 / #212121) */
+      --bg: #171717;
+      --bg-panel: #212121;
+      --bg-panel-hover: #262626;
+      --bg-subtle: #2a2a2a;
+      --bg-input: #262626;
+      
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-default: rgba(255, 255, 255, 0.13);
+      --border-focus: rgba(255, 255, 255, 0.28);
+      
+      --text-1: #ececec;
+      --text-2: #b4b4b4;
+      --text-3: #737373;
+      
+      /* Claude Warm Terracotta / Sand Accent (Natural, Intellectual, Human) */
+      --accent: #d97757;
+      --accent-hover: #c46547;
+      --accent-subtle: rgba(217, 119, 87, 0.12);
+      --accent-border: rgba(217, 119, 87, 0.35);
+      --green: #10a37f;
+      
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "JetBrains Mono", Menlo, Consolas, monospace;
+      
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-pill: 9999px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden !important;
+      position: relative;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .desktop-only-inline {
+      display: inline;
+    }
+    @media (max-width: 600px) {
+      .desktop-only-inline {
+        display: none !important;
+      }
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
+
+    .app-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: var(--bg);
+    }
+
+    /* ==========================================================================
+       TOP NAVIGATION (ChatGPT / Claude Minimalist Bar)
+       ========================================================================== */
+    .top-nav {
+      height: 54px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      gap: 16px;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      transition: all 0.15s ease;
+    }
+
+    .brand-box:hover .brand-icon {
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-1);
+    }
+
+    /* URL / Ingestion Input (Floating Rounded Pill) */
+    .url-bar-container {
+      flex: 1;
+      max-width: 580px;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .url-input {
+      width: 100%;
+      height: 38px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-pill);
+      padding: 0 84px 0 36px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-1);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .url-input:focus {
+      background: #2a2a2a;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+    }
+
+    .url-input-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-3);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .btn-index {
+      position: absolute;
+      right: 4px;
+      height: 30px;
+      padding: 0 14px;
+      background: #ececec;
+      border: none;
+      border-radius: var(--radius-pill);
+      color: #171717;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.12s ease;
+    }
+
+    .btn-index:hover { background: #ffffff; }
+    .btn-index:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-nav {
+      height: 32px;
+      padding: 0 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      color: var(--text-2);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+    }
+
+    .btn-nav:hover {
+      background: var(--bg-subtle);
+      color: var(--text-1);
+      border-color: var(--border-default);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--text-2);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 163, 127, 0.08);
+      border: 1px solid rgba(16, 163, 127, 0.22);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* ==========================================================================
+       MAIN WORKSPACE
+       ========================================================================== */
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(540px, 1.45fr) minmax(400px, 1fr);
+      padding: 20px 24px;
+      gap: 20px;
+      max-width: 1680px;
+      margin: 0 auto;
+      width: 100%;
+      min-width: 0;
+    }
+
+    @media (max-width: 1080px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+    }
+
+    /* ==========================================================================
+       LEFT COLUMN: VIDEO & CHAPTERS
+       ========================================================================== */
+    .video-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .player-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .player-box iframe, .player-box #yt-player-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      border: 0;
+    }
+
+    /* Video Info Section */
+    .video-meta-section {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .video-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .video-title-text {
+      font-size: 15.5px;
+      font-weight: 600;
+      color: var(--text-1);
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+    }
+
+    .video-meta-sub {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-3);
+      margin-top: 5px;
+    }
+
+    .author-name {
+      font-weight: 500;
+      color: var(--text-2);
+    }
+
+    .timer-badge {
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-2);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+    }
+
+    .video-action-row {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-action {
+      height: 30px;
+      padding: 0 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      color: var(--text-2);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      transition: all 0.12s ease;
+    }
+
+    .btn-action:hover {
+      background: var(--bg-panel-hover);
+      color: var(--text-1);
+      border-color: var(--border-default);
+    }
+
+    /* Chapters Track */
+    .chapters-area {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .chapters-header {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .chapters-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .chapter-item {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: 5px 12px;
+      font-size: 11.5px;
+      color: var(--text-2);
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+      user-select: none;
+    }
+
+    .chapter-item:hover {
+      background: #333333;
+      color: var(--text-1);
+      border-color: var(--border-default);
+    }
+
+    .chapter-item.active {
+      background: #333333;
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+
+    .chapter-time {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .chapter-item.active .chapter-time {
+      color: #f09a7d;
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       RIGHT COLUMN: WORKSPACE TABS (Transcript, Search & Q&A, Summary & Notes)
+       ========================================================================== */
+    .workspace-column {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 560px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      min-width: 0;
+    }
+
+    .tab-bar {
+      height: 48px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 6px;
+    }
+
+    .tab-button {
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 500;
+      color: #8e8ea0;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-button:hover {
+      color: var(--text-1);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-button.active {
+      background: var(--bg-subtle);
+      color: #ffffff;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .tab-body {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      overflow: visible;
+      position: relative;
+    }
+
+    .tab-body.active { display: flex; }
+
+    /* TAB 1: TRANSCRIPT */
+    .transcript-top-bar {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--bg-panel);
+    }
+
+    .transcript-search-input {
+      flex: 1;
+      max-width: 260px;
+      height: 32px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: 0 12px;
+      font-size: 12px;
+      color: var(--text-1);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .transcript-search-input:focus {
+      border-color: var(--border-focus);
+      background: #2a2a2a;
+    }
+
+    .transcript-list-view {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .transcript-row-item {
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      border-left: none;
+    }
+
+    .transcript-row-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #ececec;
+    }
+
+    .transcript-row-item.active-moment {
+      background: rgba(255, 255, 255, 0.09);
+      color: #ffffff;
+      font-weight: 500;
+    }
+
+    .row-timestamp {
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      letter-spacing: 0.02em;
+    }
+
+    .transcript-row-item.active-moment .row-timestamp {
+      background: var(--accent-subtle);
+      color: #f09a7d;
+      border-color: var(--accent-border);
+      font-weight: 600;
+    }
+
+    /* TAB 2: SEARCH, AUTOCOMPLETE & CHAT */
+    .search-top-bar {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-panel);
+      position: relative;
+      z-index: 50;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .search-input-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-3);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-text-input {
+      flex: 1;
+      height: 38px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-pill);
+      padding: 0 12px 0 36px;
+      font-size: 12.5px;
+      color: var(--text-1);
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .search-text-input:focus {
+      background: #2a2a2a;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-chat-send {
+      height: 34px;
+      padding: 0 16px;
+      background: #ececec;
+      border: none;
+      border-radius: var(--radius-pill);
+      color: #171717;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      transition: background 0.12s ease;
+    }
+
+    .btn-chat-send:hover { background: #ffffff; }
+    .btn-chat-send:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Autocomplete Dropdown Popover (ChatGPT / Claude Floating Box) */
+    .autocomplete-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #1c1c1c;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .popover-header {
+      padding: 8px 14px;
+      background: #141414;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      font-weight: 600;
+    }
+
+    .popover-hint {
+      font-size: 9.5px;
+      color: #64748b;
+      font-family: var(--font-mono);
+    }
+
+    .popover-list {
+      max-height: 230px;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    .popover-item {
+      padding: 8px 14px;
+      margin: 2px 6px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 12.5px;
+      color: var(--text-2);
+      transition: all 0.1s ease;
+    }
+
+    .popover-item:hover,
+    .popover-item.active-item {
+      background: var(--bg-subtle);
+      color: #ffffff;
+    }
+
+    .popover-item-icon {
+      color: var(--text-3);
+      flex-shrink: 0;
+      display: flex;
+    }
+
+    .popover-item.active-item .popover-item-icon {
+      color: var(--accent);
+    }
+
+    .match-highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Topic Pills Strip */
+    .topic-pills-bar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 14px;
+      overflow-x: auto;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border-subtle);
+      background: transparent;
+      scrollbar-width: none;
+    }
+
+    .topic-pills-bar::-webkit-scrollbar { display: none; }
+
+    .topic-pill {
+      font-size: 11px;
+      padding: 4px 11px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      flex-shrink: 0;
+    }
+
+    .topic-pill:hover {
+      background: #333333;
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .transcript-search-bridge {
+      padding: 8px 12px;
+      margin: 8px 12px;
+      background: rgba(217, 119, 87, 0.08);
+      border: 1px dashed var(--accent-border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .transcript-search-bridge:hover {
+      background: rgba(217, 119, 87, 0.15);
+      border-color: var(--accent);
+    }
+
+    .chat-view-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .chat-empty-state {
+      padding: 24px 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-2);
+    }
+
+    .example-queries {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      max-width: 440px;
+      margin-top: 6px;
+    }
+
+    .example-query-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 9px 14px;
+      font-size: 12px;
+      color: var(--text-1);
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.12s ease;
+    }
+
+    .example-query-btn:hover {
+      background: #303030;
+      border-color: var(--border-default);
+    }
+
+    .chat-message-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .user-msg {
+      align-self: flex-end;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: 16px 16px 4px 16px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: var(--text-1);
+      max-width: 85%;
+    }
+
+    .ai-msg {
+      background: #1c1c1c;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: #d4d4d8;
+    }
+
+    .ai-timestamp-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .timestamp-btn-seek {
+      height: 28px;
+      padding: 0 12px;
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      border-radius: var(--radius-pill);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.12s ease;
+    }
+
+    .timestamp-btn-seek:hover { background: var(--accent-hover); }
+
+    /* TAB 3: NOTES & HANDWRITTEN NOTEBOOK */
+    @keyframes spinNotes {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #view-notes {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-panel);
+    }
+
+    #view-notes.active {
+      display: flex;
+    }
+
+    .notes-toolbar {
+      padding: 10px 14px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .notes-styles-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .notes-styles-row::-webkit-scrollbar { display: none; }
+
+    .notes-style-pill {
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--bg-subtle);
+      color: var(--text-2);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .notes-style-pill:hover {
+      background: var(--bg-panel-hover);
+      color: var(--text-1);
+      border-color: var(--border-default);
+    }
+
+    .notes-style-pill.active {
+      background: var(--accent-subtle);
+      color: #f09a7d;
+      border-color: var(--accent-border);
+      font-weight: 600;
+    }
+
+    .notes-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .notes-view-segmented {
+      display: inline-flex;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .notes-view-segmented button {
+      background: transparent;
+      border: none;
+      color: var(--text-3);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.12s ease;
+    }
+
+    .notes-view-segmented button:hover {
+      color: var(--text-1);
+    }
+
+    .notes-view-segmented button.active {
+      background: var(--bg-panel);
+      color: var(--text-1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    }
+
+    .notes-actions-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .notes-action-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-2);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.12s ease;
+    }
+
+    .notes-action-btn:hover {
+      background: var(--bg-panel-hover);
+      color: var(--text-1);
+      border-color: var(--border-default);
+    }
+
+    .notes-action-btn.primary {
+      background: var(--accent-subtle);
+      border-color: var(--accent-border);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .notes-action-btn.primary:hover {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* Multi-Language Dropdown Styling */
+    .lang-selector-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .lang-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      background: #232323;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius-md);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      min-width: 205px;
+      max-height: 290px;
+      overflow-y: auto;
+      z-index: 120;
+      padding: 6px;
+    }
+
+    .lang-opt-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 11px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .lang-opt-item:hover {
+      background: var(--bg-subtle);
+      color: #ffffff;
+    }
+
+    .lang-opt-item.active {
+      background: rgba(217, 119, 87, 0.12);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .lang-badge {
+      font-size: 9.5px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-3);
+      padding: 1px 6px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .notes-view-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px 28px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Clean Tech Markdown View */
+    .notes-tech-view {
+      font-size: 13px;
+      line-height: 1.7;
+      color: #cbd5e1;
+    }
+    .notes-tech-view h1, .notes-tech-view h2, .notes-tech-view h3 {
+      color: #fff;
+      margin: 16px 0 8px 0;
+      letter-spacing: -0.01em;
+    }
+    .notes-tech-view code {
+      font-family: var(--font-mono);
+      background: var(--bg-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      color: var(--accent);
+    }
+    .notes-tech-view blockquote {
+      border-left: 2px solid var(--accent);
+      padding-left: 12px;
+      margin: 8px 0;
+      color: var(--text-2);
+    }
+
+    /* AUTHENTIC HANDWRITTEN NOTEBOOK PAPER */
+    .paper {
+      position: relative;
+      font-family: 'Kalam', "Segoe Print", cursive;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 30px;
+      color: #1b3a8a;
+      padding: 18px 18px 32px 76px;
+      border-radius: 6px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      background-color: #fffef9;
+      background-image: 
+        linear-gradient(to right, transparent 62px, #e08a8a 62px, #e08a8a 64px, transparent 64px),
+        repeating-linear-gradient(to bottom, transparent 0, transparent 29px, #c5d8ec 29px, #c5d8ec 30px);
+      background-position: 0 16px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      min-height: 480px;
+    }
+
+    .paper h2 {
+      font-family: 'Kalam', cursive;
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 38px;
+      margin: 0 0 4px 0;
+      color: #12263a;
+      text-decoration: underline;
+      text-decoration-color: #c0392b;
+      text-decoration-thickness: 2.5px;
+      text-underline-offset: 6px;
+    }
+
+    .paper .sum {
+      margin: 0 0 22px 0;
+      color: #3b5bb0;
+      font-size: 14.5px;
+      line-height: 26px;
+      font-style: italic;
+    }
+
+    .paper section {
+      position: relative;
+      margin: 0 0 24px 0;
+      break-inside: avoid;
+    }
+
+    .paper h3 {
+      font-family: 'Kalam', cursive;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 30px;
+      margin: 0 0 4px 0;
+      color: #12263a;
+      text-decoration: underline;
+      text-decoration-color: #c0392b;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 4px;
+      border: 0;
+      padding: 0;
+    }
+
+    .paper .box {
+      margin: 8px 0 12px 0;
+      padding: 4px 12px;
+      outline: 2px solid #c0392b;
+      outline-offset: 2.5px;
+      border-radius: 6px;
+      color: #12263a;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.85);
+      line-height: 26px;
+      font-size: 15px;
+    }
+
+    .paper mark {
+      background: linear-gradient(180deg, transparent 45%, rgba(255, 224, 102, 0.95) 45%);
+      color: inherit;
+      padding: 0 3px;
+      border-radius: 2px;
+    }
+
+    .paper ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .paper li {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+      align-items: flex-start;
+      line-height: 28px;
+    }
+
+    .paper li.sub-step {
+      padding-left: 18px;
+      color: #2b4c7e;
+      font-size: 14.5px;
+    }
+
+    .paper .bullet-sym {
+      color: #c0392b;
+      font-weight: 700;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    /* Left margin clickable timestamp badge */
+    .mark-time {
+      position: absolute;
+      left: -68px;
+      top: 5px;
+      width: 52px;
+      text-align: center;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 11px;
+      line-height: 19px;
+      color: #8a5a00;
+      background: #ffe9a8;
+      border: 1px solid #ebd07a;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s ease, background 0.15s ease;
+      user-select: none;
+      display: inline-block;
+    }
+
+    .mark-time:hover {
+      background: #fcd34d;
+      transform: scale(1.05);
+      color: #6b4300;
+    }
+
+    /* Print / PDF Styling: Authentic ruled notebook layout for print and PDF export */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm 12mm 10mm 12mm;
+      }
+      body {
+        background: #fffef9 !important;
+        color: #1e3a8a !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      header, .landing-hero, .landing-container, .player-area, .video-column, .tab-bar, .notes-toolbar, .toast-container, .modal-overlay, .noprint {
+        display: none !important;
+      }
+      .app-container, .workspace, .workspace-column {
+        display: block !important;
+        height: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: #fffef9 !important;
+      }
+      .tab-body {
+        display: none !important;
+      }
+      #view-notes {
+        display: block !important;
+        overflow: visible !important;
+        height: auto !important;
+        background: #fffef9 !important;
+      }
+      .notes-view-scroll {
+        overflow: visible !important;
+        height: auto !important;
+        padding: 0 !important;
+      }
+      .paper {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 12px 18px 24px 76px !important;
+        background-color: #fffef9 !important;
+        background-image: 
+          linear-gradient(to right, transparent 58px, #f87171 58px, #f87171 60px, transparent 60px),
+          repeating-linear-gradient(to bottom, transparent 0, transparent 28px, #dbeafe 28px, #dbeafe 29px) !important;
+        background-position: 0 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .paper section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .paper h3 {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+      .paper li, .paper .box {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .mark-time {
+        display: inline-block !important;
+        color: #854d0e !important;
+        background: #fef08a !important;
+        border: 1px solid #facc15 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
+    /* SAMPLE MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-list {
+      padding: 14px 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sample-row {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .sample-row:hover {
+      background: #303030;
+      border-color: var(--border-default);
+    }
+
+    /* TOAST */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-default);
+      color: #ececec;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from { transform: translateY(4px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ==========================================================================
+       HERO & LANDING EXPERIENCE (Claude / Perplexity Clean Minimalist)
+       ========================================================================== */
+    .landing-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 70px 24px 75px 24px;
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+      text-align: center;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    #active-session-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      padding: 6px 16px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-pill);
+      margin-bottom: 24px;
+      cursor: pointer;
+      color: var(--text-2);
+      transition: all 0.15s ease;
+    }
+
+    #active-session-banner:hover {
+      background: #2a2a2a;
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #fff;
+    }
+
+    .active-pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-border);
+      padding: 5px 14px;
+      border-radius: var(--radius-pill);
+      margin-bottom: 22px;
+      letter-spacing: 0.02em;
+    }
+
+    .hero-title {
+      font-size: 42px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.22;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      max-width: 760px;
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 28px; }
+    }
+
+    .hero-sub {
+      font-size: 15px;
+      color: var(--text-2);
+      line-height: 1.6;
+      max-width: 620px;
+      margin-bottom: 24px;
+    }
+
+    /* Landing Source Switcher Tabs */
+    .landing-tabs {
+      display: inline-flex;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: 3px;
+      gap: 3px;
+      margin-bottom: 20px;
+    }
+
+    .landing-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-2);
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.15s ease;
+    }
+
+    .landing-tab:hover {
+      color: var(--text-1);
+    }
+
+    .landing-tab.active {
+      background: var(--bg-subtle);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Offline Lecture Upload Card */
+    .hero-upload-card {
+      width: 100%;
+      max-width: 680px;
+      background: #242424;
+      border: 2px dashed rgba(255, 255, 255, 0.18);
+      border-radius: var(--radius-md);
+      padding: 32px 24px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    .hero-upload-card:hover, .hero-upload-card.dragover {
+      background: #282828;
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .upload-icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--accent-subtle);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .hero-search-box {
+      width: 100%;
+      max-width: 680px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: #242424;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-pill);
+      padding: 5px 6px 5px 18px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      transition: all 0.2s ease;
+      margin-bottom: 0;
+    }
+
+    .hero-search-box:focus-within {
+      background: #282828;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.18);
+    }
+
+    .hero-search-icon {
+      color: var(--text-3);
+      display: flex;
+      align-items: center;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .hero-search-input {
+      flex: 1;
+      height: 42px;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 13.5px;
+      color: #ffffff;
+    }
+
+    .hero-search-input::placeholder {
+      color: var(--text-3);
+    }
+
+    .btn-hero-submit {
+      height: 42px;
+      padding: 0 20px;
+      background: #ececec;
+      border: none;
+      border-radius: var(--radius-pill);
+      color: #171717;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .btn-hero-submit:hover {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-hero-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 1-Click Quick Sample Pills */
+    .hero-samples-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      margin-bottom: 28px;
+    }
+
+    .sample-lead {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-3);
+      margin-right: 2px;
+    }
+
+    .sample-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: #cbd5e1;
+      padding: 5px 13px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .sample-chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .sample-chip .chip-author {
+      color: var(--text-3);
+      font-size: 11px;
+    }
+
+    .sample-section-header {
+      font-size: 13px;
+      letter-spacing: 0;
+      color: var(--text-3);
+      font-weight: 500;
+      text-transform: none;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .sample-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      width: 100%;
+    }
+
+    @media (max-width: 860px) {
+      .sample-grid { grid-template-columns: 1fr; }
+    }
+
+    .sample-card {
+      background: #212121;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .sample-card:hover {
+      background: #262626;
+      border-color: rgba(255, 255, 255, 0.22);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .sample-card-author {
+      font-size: 12px;
+      color: var(--text-2);
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sample-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ececec;
+      line-height: 1.4;
+    }
+
+    .sample-card-desc {
+      font-size: 12px;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+
+    .sample-card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-3);
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .sample-card-btn {
+      color: #ffffff;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11.5px;
+    }
+
+    .sample-card:hover .sample-card-btn {
+      color: var(--accent);
+    }
+
+    /* ==========================================================================
+       RESPONSIVE & MOBILE POLISH (320px - 1080px)
+       Zero horizontal overflow, perfectly centered elements, fluid typography
+       ========================================================================== */
+    @media (max-width: 1080px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .top-nav {
+        padding: 0 14px;
+        gap: 10px;
+      }
+      .landing-container {
+        padding: 44px 16px 56px 16px;
+      }
+      .hero-title {
+        font-size: clamp(24px, 6vw, 32px);
+        margin-bottom: 14px;
+      }
+      .hero-sub {
+        font-size: 14px;
+        line-height: 1.55;
+        margin-bottom: 22px;
+      }
+      .hero-search-box {
+        padding: 4px 5px 4px 16px;
+      }
+      .sample-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top-nav {
+        height: 50px;
+        padding: 0 10px;
+        gap: 8px;
+      }
+      .brand-title {
+        font-size: 13.5px;
+      }
+      .btn-nav {
+        height: 30px;
+        padding: 0 8px;
+        font-size: 11.5px;
+        gap: 4px;
+      }
+      #top-url-bar {
+        display: none !important;
+      }
+      body.in-workspace .nav-btn-featured,
+      body.in-workspace .nav-btn-upload {
+        display: none !important;
+      }
+      .status-pill {
+        padding: 4px 6px;
+      }
+      .status-pill span:not(.status-dot) {
+        display: none;
+      }
+      .workspace {
+        padding: 10px 8px;
+        gap: 12px;
+      }
+      .video-meta-section {
+        padding: 12px 14px;
+        gap: 10px;
+      }
+      .video-title-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .video-title-text {
+        font-size: 14.5px;
+      }
+      .video-action-row {
+        justify-content: flex-start;
+      }
+      .workspace-column {
+        min-height: 480px;
+      }
+      .tab-bar {
+        height: 42px;
+        padding: 0 6px;
+      }
+      .tab-button {
+        flex: 1;
+        justify-content: center;
+        padding: 5px 6px;
+        font-size: 11.5px;
+        gap: 4px;
+      }
+      .notes-toolbar {
+        padding: 8px 10px;
+        gap: 8px;
+      }
+      .notes-controls-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .notes-controls-row > div:first-child {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .notes-actions-group {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .notes-action-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 4px 6px;
+        font-size: 11px;
+      }
+      .lang-dropdown-menu {
+        right: 0;
+        left: auto;
+        max-width: 250px;
+        width: max-content;
+      }
+      .paper {
+        padding: 14px 10px 24px 44px !important;
+        font-size: 14px !important;
+        line-height: 26px !important;
+        background-image: 
+          linear-gradient(to right, transparent 34px, #e08a8a 34px, #e08a8a 36px, transparent 36px),
+          repeating-linear-gradient(to bottom, transparent 0, transparent 25px, #c5d8ec 25px, #c5d8ec 26px) !important;
+        background-position: 0 14px !important;
+      }
+      .paper h2 {
+        font-size: 18px;
+        line-height: 30px;
+      }
+      .paper h3 {
+        font-size: 15px;
+        line-height: 26px;
+      }
+      .paper .sum {
+        font-size: 13px;
+        line-height: 22px;
+        margin-bottom: 14px;
+      }
+      .mark-time {
+        left: -40px !important;
+        width: 34px !important;
+        font-size: 9px !important;
+        line-height: 16px !important;
+        padding: 0 !important;
+      }
+      .paper .box {
+        word-break: break-word;
+        overflow-wrap: break-word;
+        font-size: 13.5px;
+      }
+      .paper li {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+      .notes-view-scroll {
+        padding: 10px 8px 20px 8px;
+      }
+      .ai-timestamp-box {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .landing-container {
+        padding: 28px 12px 38px 12px;
+      }
+      .hero-badge {
+        font-size: 10.5px;
+        padding: 4px 10px;
+        margin-bottom: 14px;
+      }
+      .hero-title {
+        font-size: clamp(21px, 6.5vw, 26px);
+        line-height: 1.25;
+      }
+      .hero-sub {
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 18px;
+      }
+      .landing-tabs {
+        width: 100%;
+        max-width: 310px;
+        margin-bottom: 14px;
+      }
+      .landing-tab {
+        flex: 1;
+        justify-content: center;
+        padding: 5px 8px;
+        font-size: 11px;
+        gap: 4px;
+      }
+      .hero-search-box {
+        padding: 4px 4px 4px 12px;
+      }
+      .hero-search-icon {
+        margin-right: 6px;
+      }
+      .hero-search-input {
+        font-size: 12px;
+        height: 38px;
+        min-width: 0;
+      }
+      .btn-hero-submit {
+        height: 38px;
+        padding: 0 12px;
+        font-size: 11.5px;
+        gap: 3px;
+      }
+      .hero-samples-strip {
+        gap: 6px;
+        margin-top: 14px;
+        margin-bottom: 20px;
+      }
+      .sample-lead {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 2px;
+        font-size: 11px;
+      }
+      .sample-chip {
+        padding: 4px 9px;
+        font-size: 11px;
+        gap: 4px;
+      }
+      .hero-upload-card {
+        padding: 22px 12px;
+      }
+      .landing-footer-note {
+        flex-direction: column !important;
+        text-align: center;
+        gap: 8px !important;
+        align-items: center !important;
+      }
+      .modal-box {
+        max-height: 90vh;
+        margin: 10px;
+      }
+      .modal-overlay {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- TOP NAVIGATION -->
+    <header class="top-nav">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="brand-box" onclick="showLandingView()">
+          <div class="brand-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <span class="brand-title">ChronoVideo</span>
+        </div>
+        <button class="btn-nav" id="btn-back-home" onclick="showLandingView()" style="display:none; font-size:11.5px; height:28px; padding:0 10px;">
+          ← Home
+        </button>
+      </div>
+
+      <!-- URL Input Bar (Visible in Workspace) -->
+      <div class="url-bar-container" id="top-url-bar" style="display:none;">
+        <div class="url-input-icon">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <input 
+          type="text" 
+          id="video-url-input" 
+          class="url-input" 
+          placeholder="Paste a YouTube link..." 
+          onkeydown="if(event.key==='Enter') indexCurrentVideo()"
+        >
+        <button class="btn-index" id="btn-index" onclick="indexCurrentVideo()">
+          Open
+        </button>
+      </div>
+
+      <!-- Right Actions -->
+      <div class="nav-actions">
+        <button class="btn-nav nav-btn-featured" onclick="openLibraryModal()">
+          <span class="desktop-only-inline">Featured </span><span>Lectures</span>
+        </button>
+
+        <button class="btn-nav nav-btn-upload" onclick="document.getElementById('nav-file-input').click()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <span>Upload<span class="desktop-only-inline"> File</span></span>
+        </button>
+        <input type="file" id="nav-file-input" style="display:none;" accept=".pdf,.mp3,.wav,.m4a,.mp4,.mkv,.webm" onchange="if(this.files.length) handleLectureFileUpload(this.files[0])">
+
+        <button class="btn-nav" id="btn-export-top" onclick="downloadRuledNotesPdf()" style="display:none;" title="Download Ruled Notebook PDF">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <span><span class="desktop-only-inline">Ruled </span>PDF</span>
+        </button>
+
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span id="index-stat" class="desktop-only-inline">Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 1. LANDING & SEARCH HERO VIEW (Default view on initial open) -->
+    <section class="landing-container" id="view-landing">
+      <!-- Active video resume banner if user navigated back to Home -->
+      <div id="active-session-banner" style="display:none;" onclick="showWorkspaceView()">
+        <span class="active-pulse-dot"></span>
+        <span id="active-banner-text">Continue watching</span>
+        <span style="color:var(--accent); font-weight:500; margin-left:6px;">Open →</span>
+      </div>
+
+      <!-- Lecture Intelligence Badge -->
+      <div class="hero-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <span>Lecture Intelligence & Handwritten Notes</span>
+      </div>
+
+      <h1 class="hero-title">
+        Never get lost in a<br>
+        marathon lecture again.
+      </h1>
+
+      <p class="hero-sub">
+        Paste any YouTube lecture or drop your professor's slides. Find the exact timestamp you need, with instant notebook-style study notes.
+      </p>
+
+      <!-- Source Switcher Tabs -->
+      <div class="landing-tabs">
+        <button class="landing-tab active" id="landing-tab-url" onclick="switchLandingMode('url')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          <span>YouTube<span class="desktop-only-inline"> Lecture</span></span>
+        </button>
+        <button class="landing-tab" id="landing-tab-file" onclick="switchLandingMode('file')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <span>Upload<span class="desktop-only-inline"> File (PDF / MP4 / MP3)</span></span>
+        </button>
+      </div>
+
+      <!-- Mode 1: YouTube URL Input -->
+      <div class="hero-search-box" id="landing-url-box">
+        <div class="hero-search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <input 
+          type="text" 
+          id="hero-url-input" 
+          class="hero-search-input" 
+          placeholder="Paste a YouTube lecture link..." 
+          onkeydown="if(event.key==='Enter') indexFromHero()"
+        >
+        <button class="btn-hero-submit" id="btn-hero-submit" onclick="indexFromHero()">
+          <span>Open</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+
+      <!-- 1-Click Quick Sample Pills -->
+      <div class="hero-samples-strip" id="landing-samples-strip">
+        <span class="sample-lead">Try instant demo:</span>
+        <button class="sample-chip" type="button" onclick="selectSampleAndOpen('Bfqd8BsPVuw')">
+          <span>🌳</span>
+          <span>Binary Trees</span>
+          <span class="chip-author">• Striver</span>
+        </button>
+        <button class="sample-chip" type="button" onclick="selectSampleAndOpen('IHZwWFHWa-w')">
+          <span>📐</span>
+          <span>Gradient Descent</span>
+          <span class="chip-author">• 3Blue1Brown</span>
+        </button>
+        <button class="sample-chip" type="button" onclick="selectSampleAndOpen('zjkBMFhNj_g')">
+          <span>🤖</span>
+          <span>Intro to LLMs</span>
+          <span class="chip-author">• Karpathy</span>
+        </button>
+      </div>
+
+      <!-- Mode 2: Offline File Dropzone -->
+      <div class="hero-upload-card" id="landing-file-box" style="display:none;" onclick="document.getElementById('landing-file-input').click()" ondragover="event.preventDefault(); this.classList.add('dragover');" ondragleave="this.classList.remove('dragover');" ondrop="event.preventDefault(); this.classList.remove('dragover'); if(event.dataTransfer.files.length) handleLectureFileUpload(event.dataTransfer.files[0]);">
+        <input type="file" id="landing-file-input" style="display:none;" accept=".pdf,.mp3,.wav,.m4a,.mp4,.mkv,.webm" onchange="if(this.files.length) handleLectureFileUpload(this.files[0])">
+        <div class="upload-icon-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </div>
+        <div style="font-weight:600; font-size:14px; color:var(--text-1); margin-bottom:4px;">Click or drag & drop lecture file here</div>
+        <div style="font-size:12px; color:var(--text-3);">Supports PDF Slides (.pdf), Video (.mp4, .mkv, .webm), Audio (.mp3, .wav, .m4a)</div>
+      </div>
+
+      <!-- Upload Progress Indicator -->
+      <div id="landing-upload-progress" style="display:none; width:100%; max-width:680px; margin-top:14px; padding:18px; background:var(--bg-panel); border:1px solid var(--border-default); border-radius:12px; text-align:center;">
+        <div style="width:24px; height:24px; border:2.5px solid var(--accent); border-top-color:transparent; border-radius:50%; margin:0 auto 10px; animation:spinNotes 0.8s linear infinite;"></div>
+        <div id="upload-status-text" style="font-weight:500; font-size:13px; color:var(--text-1);">Processing lecture file...</div>
+        <div style="font-size:11.5px; color:var(--text-3); margin-top:3px;">Speech recognition (Groq Whisper) / PDF slide extraction in progress</div>
+      </div>
+
+      <!-- Clean, modest bottom note on lower side -->
+      <div class="landing-footer-note" style="width:100%; max-width:680px; margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-3); flex-wrap:wrap; gap:12px;">
+        <span>Works with technical lectures, coding tutorials, and courses.</span>
+        <div style="display:flex; gap:16px;">
+          <span>Chapter timeline</span>
+          <span>•</span>
+          <span>Interactive transcript</span>
+          <span>•</span>
+          <span>Study notes</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 2. WORKSPACE VIEW (Video Player + Transcript + Search & Q&A) -->
+    <main class="workspace" id="view-workspace" style="display: none;">
+
+      <!-- LEFT: VIDEO & CHAPTERS -->
+      <section class="video-column">
+        
+        <div class="player-box">
+          <div id="player-box-inner" style="position:relative; width:100%; height:100%;">
+            <div id="yt-player-container"></div>
+          </div>
+        </div>
+
+        <!-- Video Metadata -->
+        <div class="video-meta-section">
+          <div class="video-title-row">
+            <div>
+              <h1 class="video-title-text" id="display-title">Lecture Video</h1>
+              <div class="video-meta-sub">
+                <span class="author-name" id="display-author"></span>
+                <span id="display-time-stat" class="timer-badge" style="display:none;">00:00</span>
+                <span id="display-chunk-stat"></span>
+              </div>
+            </div>
+
+            <div class="video-action-row">
+              <button class="btn-action" title="Copy Current Timestamp URL" onclick="copyCurrentPlaybackUrl()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copy Link</span>
+              </button>
+              <button class="btn-action" title="Open on YouTube" onclick="openExternalYouTube()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                <span>YouTube ↗</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chapters -->
+          <div class="chapters-area">
+            <div class="chapters-header">
+              <span>Chapters</span>
+              <span id="chapter-count-stat" style="font-family: var(--font-mono); font-size:10px;"></span>
+            </div>
+            <div class="chapters-scroll" id="chapters-strip"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT: WORKSPACE TABS -->
+      <aside class="workspace-column">
+        
+        <div class="tab-bar">
+          <button class="tab-button active" id="tab-transcript-btn" onclick="switchTab('transcript')">
+            <span>Transcript</span>
+          </button>
+          <button class="tab-button" id="tab-search-btn" onclick="switchTab('search')">
+            <span>Search</span>
+          </button>
+          <button class="tab-button" id="tab-notes-btn" onclick="switchTab('notes')">
+            <span>Notes</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: TRANSCRIPT -->
+        <div class="tab-body active" id="view-transcript">
+          <div class="transcript-top-bar">
+            <input 
+              type="text" 
+              class="transcript-search-input" 
+              id="transcript-filter" 
+              placeholder="Search transcript..." 
+              oninput="filterTranscript(this.value)"
+            >
+            <button class="btn-action" id="btn-autoscroll" onclick="toggleAutoScroll()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+              <span>Auto-scroll</span>
+            </button>
+          </div>
+          <div class="transcript-list-view" id="transcript-feed"></div>
+        </div>
+
+        <!-- TAB 2: SEARCH -->
+        <div class="tab-body" id="view-search">
+          <!-- Top Search Input Bar with Autocomplete -->
+          <div class="search-top-bar">
+            <div class="search-input-wrapper">
+              <div class="search-input-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                id="query-input" 
+                class="search-text-input" 
+                placeholder="Ask a question or search concepts..." 
+                autocomplete="off"
+                oninput="handleQueryInput(this.value)"
+                onkeydown="handleQueryKeydown(event)"
+                onfocus="handleQueryFocus()"
+              >
+              <button class="btn-chat-send" id="btn-ask" onclick="sendSearchQuery()">
+                <span>Ask</span>
+              </button>
+
+              <!-- Live Autocomplete Popover -->
+              <div class="autocomplete-popover" id="autocomplete-popover" style="display: none;">
+                <div class="popover-header">
+                  <span id="popover-title">Suggested questions & topics</span>
+                  <span class="popover-hint">↑↓ navigate • ↵ select • Esc</span>
+                </div>
+                <div class="popover-list" id="autocomplete-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fast Topic Pills Strip -->
+          <div class="topic-pills-bar" id="topic-pills-bar"></div>
+
+          <div class="chat-view-scroll" id="chat-stream">
+            <div class="chat-empty-state" id="chat-empty-state">
+              <span style="font-weight:600; color:var(--text-1); font-size:13.5px;">Ask a question or explore topics</span>
+              <span style="font-size:12px; color:var(--text-3); max-width:340px;">Select a question below or search above to jump directly to that part of the video.</span>
+
+              <div class="example-queries" id="example-queries-box"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: NOTES & HANDWRITTEN NOTEBOOK -->
+        <div class="tab-body" id="view-notes">
+          <!-- Sticky Notes Toolbar -->
+          <div class="notes-toolbar noprint">
+            <!-- Row 1: Style Pills -->
+            <div class="notes-styles-row">
+              <button class="notes-style-pill active" id="pill-style-detailed" onclick="switchNotesStyle('detailed')">
+                <span>🧠</span>
+                <span>Detailed Notes</span>
+              </button>
+              <button class="notes-style-pill" id="pill-style-asis" onclick="switchNotesStyle('asis')">
+                <span>🎙️</span>
+                <span>As Teacher Said</span>
+              </button>
+              <button class="notes-style-pill" id="pill-style-short" onclick="switchNotesStyle('short')">
+                <span>⚡</span>
+                <span>Short Notes</span>
+              </button>
+            </div>
+
+            <!-- Row 2: View Switcher, Language Selector & Action Buttons -->
+            <div class="notes-controls-row">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div class="notes-view-segmented">
+                  <button class="active" id="btn-view-paper" onclick="switchNotesView('paper')">
+                    <span>📝</span>
+                    <span>Notebook Paper</span>
+                  </button>
+                  <button id="btn-view-tech" onclick="switchNotesView('tech')">
+                    <span>💻</span>
+                    <span>Clean Tech</span>
+                  </button>
+                </div>
+
+                <!-- Language Dropdown Pill (Default: English) -->
+                <div class="lang-selector-wrapper">
+                  <button class="notes-action-btn" id="btn-lang-selector" onclick="toggleLangDropdown(event)" title="Select note language (Default: English)">
+                    <span>🌐</span>
+                    <span id="current-lang-text">English</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </button>
+                  <div class="lang-dropdown-menu" id="lang-dropdown-menu" style="display:none;">
+                    <div class="lang-opt-item active" data-lang="en" onclick="selectNotesLanguage('en', 'English')">
+                      <span>🇬🇧</span>
+                      <span style="flex:1;">English</span>
+                      <span class="lang-badge">Default</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="hinglish" onclick="selectNotesLanguage('hinglish', 'Hinglish')">
+                      <span>🇮🇳</span>
+                      <span style="flex:1;">Hinglish</span>
+                      <span class="lang-badge" style="background:rgba(217,119,87,0.15);color:var(--accent);">Popular</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="hi" onclick="selectNotesLanguage('hi', 'हिन्दी (Hindi)')">
+                      <span>🇮🇳</span>
+                      <span style="flex:1;">हिन्दी (Hindi)</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="es" onclick="selectNotesLanguage('es', 'Español (Spanish)')">
+                      <span>🇪🇸</span>
+                      <span style="flex:1;">Español</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="fr" onclick="selectNotesLanguage('fr', 'Français (French)')">
+                      <span>🇫🇷</span>
+                      <span style="flex:1;">Français</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="de" onclick="selectNotesLanguage('de', 'Deutsch (German)')">
+                      <span>🇩🇪</span>
+                      <span style="flex:1;">Deutsch</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="ja" onclick="selectNotesLanguage('ja', '日本語 (Japanese)')">
+                      <span>🇯🇵</span>
+                      <span style="flex:1;">日本語</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="bn" onclick="selectNotesLanguage('bn', 'বাংলা (Bengali)')">
+                      <span>🇮🇳</span>
+                      <span style="flex:1;">বাংলা (Bengali)</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="ta" onclick="selectNotesLanguage('ta', 'தமிழ் (Tamil)')">
+                      <span>🇮🇳</span>
+                      <span style="flex:1;">தமிழ் (Tamil)</span>
+                    </div>
+                    <div class="lang-opt-item" data-lang="te" onclick="selectNotesLanguage('te', 'తెలుగు (Telugu)')">
+                      <span>🇮🇳</span>
+                      <span style="flex:1;">తెలుగు (Telugu)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="notes-actions-group">
+                <button class="notes-action-btn primary" id="btn-export-pdf" onclick="downloadRuledNotesPdf()" title="Download Ruled Notebook PDF">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                  <span>Ruled PDF</span>
+                </button>
+                <button class="notes-action-btn" onclick="printNotes()" title="Print or save as PDF">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                  <span>Print</span>
+                </button>
+                <button class="notes-action-btn" onclick="downloadNotesMarkdown()" title="Download Markdown (.md)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  <span>.md</span>
+                </button>
+                <button class="notes-action-btn" onclick="copyNotesToClipboard()" title="Copy to clipboard">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Scrollable View Area -->
+          <div class="notes-view-scroll" id="notes-scroll-container">
+            <!-- Notebook Paper Container -->
+            <div id="notes-paper-container">
+              <div style="padding: 40px 20px; text-align: center; color: var(--text-3);">
+                <div style="margin-bottom: 8px; font-weight: 500; color: var(--text-2);">Ready to generate lecture notes</div>
+                <div style="font-size: 12px;">Choose a style above to generate handwritten or markdown notes.</div>
+              </div>
+            </div>
+
+            <!-- Clean Tech Container (hidden by default) -->
+            <div id="notes-tech-container" class="notes-tech-view" style="display: none;"></div>
+          </div>
+        </div>
+
+      </aside>
+
+    </main>
+
+  </div>
+
+  <!-- SAMPLE VIDEOS MODAL -->
+  <div class="modal-overlay" id="library-modal" onclick="if(event.target===this) closeLibraryModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span style="font-weight:600; font-size:13.5px;">Featured Lectures</span>
+        <button class="btn-action" onclick="closeLibraryModal()">✕</button>
+      </div>
+      <div class="modal-list" id="sample-lectures-list"></div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    // =========================================================================
+    // STATE & NAVIGATION
+    // =========================================================================
+    let ytPlayer = null;
+    let isYtApiReady = false;
+    let isVideoLoaded = false;
+    let currentVideoId = "";
+    let activeSegments = [];
+    let activeChapters = [];
+    let activeMetadata = {};
+    let activeSuggestions = [];
+    let selectedSuggestionIndex = -1;
+    let currentFilteredSuggestions = [];
+    let timeUpdateInterval = null;
+    let currentResourceType = 'youtube'; // 'youtube', 'media', 'pdf'
+    let activeFileUrl = '';
+    let autoScrollEnabled = true;
+    let cachedNotesMarkdown = "";
+    let cachedNotesByStyle = { detailed: null, asis: null, short: null };
+    let currentNotesLanguage = 'en'; // DEFAULT IS ENGLISH if none selected
+    let cachedNotesByLang = {};      // key: `${style}_${lang}`
+    let currentNotesStyle = 'detailed';
+    let currentNotesView = 'paper';
+    let isGeneratingNotes = false;
+
+    // Landing Mode: YouTube URL vs Offline File
+    function switchLandingMode(mode) {
+      const tabUrl = document.getElementById('landing-tab-url');
+      const tabFile = document.getElementById('landing-tab-file');
+      const boxUrl = document.getElementById('landing-url-box');
+      const boxFile = document.getElementById('landing-file-box');
+      const strip = document.getElementById('landing-samples-strip');
+
+      if (mode === 'url') {
+        if (tabUrl) tabUrl.classList.add('active');
+        if (tabFile) tabFile.classList.remove('active');
+        if (boxUrl) boxUrl.style.display = 'flex';
+        if (boxFile) boxFile.style.display = 'none';
+        if (strip) strip.style.display = 'flex';
+      } else {
+        if (tabUrl) tabUrl.classList.remove('active');
+        if (tabFile) tabFile.classList.add('active');
+        if (boxUrl) boxUrl.style.display = 'none';
+        if (boxFile) boxFile.style.display = 'flex';
+        if (strip) strip.style.display = 'none';
+      }
+    }
+
+    // View Switching: Landing vs Workspace
+    function showLandingView() {
+      document.body.classList.remove('in-workspace');
+      const landing = document.getElementById('view-landing');
+      const workspace = document.getElementById('view-workspace');
+      const topUrl = document.getElementById('top-url-bar');
+      const backBtn = document.getElementById('btn-back-home');
+      const exportTop = document.getElementById('btn-export-top');
+
+      if (landing) landing.style.display = 'flex';
+      if (workspace) workspace.style.display = 'none';
+      if (topUrl) topUrl.style.display = 'none';
+      if (backBtn) backBtn.style.display = 'none';
+      if (exportTop) exportTop.style.display = 'none';
+
+      // Resume banner if user previously indexed a lecture
+      const banner = document.getElementById('active-session-banner');
+      const bannerText = document.getElementById('active-banner-text');
+      if (banner && isVideoLoaded) {
+        banner.style.display = 'inline-flex';
+        const title = activeMetadata.title || `Video (${currentVideoId})`;
+        bannerText.innerText = `Continue watching: ${title.length > 55 ? title.slice(0, 55) + '...' : title}`;
+      }
+    }
+
+    function showWorkspaceView() {
+      document.body.classList.add('in-workspace');
+      const landing = document.getElementById('view-landing');
+      const workspace = document.getElementById('view-workspace');
+      const topUrl = document.getElementById('top-url-bar');
+      const backBtn = document.getElementById('btn-back-home');
+      const exportTop = document.getElementById('btn-export-top');
+
+      if (landing) landing.style.display = 'none';
+      if (workspace) workspace.style.display = 'grid';
+      if (topUrl) topUrl.style.display = 'flex';
+      if (backBtn) backBtn.style.display = 'inline-flex';
+      if (exportTop) exportTop.style.display = 'inline-flex';
+    }
+
+    function extractClientYoutubeId(urlOrId) {
+      if (!urlOrId) return null;
+      const clean = urlOrId.trim();
+      if (/^[A-Za-z0-9_-]{11}$/.test(clean)) return clean;
+      const match = clean.match(/(?:v=|\/v\/|embed\/|youtu\.be\/|\/embed\/|\/watch\?v=|\&v=)([a-zA-Z0-9_-]{11})/);
+      if (match) return match[1];
+      const shorts = clean.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+      if (shorts) return shorts[1];
+      return null;
+    }
+
+    function loadVideoImmediately(vidId) {
+      if (!vidId) return;
+      currentVideoId = vidId;
+      currentResourceType = 'youtube';
+      activeFileUrl = '';
+
+      // Reset notes state for new video
+      cachedNotesByStyle = { detailed: null, asis: null, short: null };
+      cachedNotesMarkdown = "";
+      const paperCont = document.getElementById('notes-paper-container');
+      const techCont = document.getElementById('notes-tech-container');
+      if (paperCont) {
+        paperCont.innerHTML = `
+          <div style="padding: 40px 20px; text-align: center; color: var(--text-3);">
+            <div style="margin-bottom: 8px; font-weight: 500; color: var(--text-2);">Ready to generate lecture notes</div>
+            <div style="font-size: 12px;">Choose a style above to generate handwritten or markdown notes.</div>
+          </div>
+        `;
+      }
+      if (techCont) techCont.innerHTML = '';
+
+      const playerInner = document.getElementById('player-box-inner');
+      if (!playerInner) return;
+
+      // Render high-performance direct YouTube iframe (Zero-second lag, impossible to black-screen)
+      playerInner.innerHTML = `
+        <iframe 
+          id="yt-embed-player"
+          src="https://www.youtube.com/embed/${vidId}?enablejsapi=1&autoplay=1&rel=0&modestbranding=1" 
+          frameborder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          allowfullscreen
+          style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
+        ></iframe>
+      `;
+
+      bindYTPlayerWrapper('yt-embed-player');
+      startTimeTracking();
+    }
+
+    function renderResourcePlayer(type, fileUrl, meta) {
+      const playerInner = document.getElementById('player-box-inner');
+      if (!playerInner) return;
+
+      if (type === 'pdf') {
+        playerInner.innerHTML = `
+          <iframe 
+            id="pdf-viewer-frame" 
+            src="${fileUrl}#page=1" 
+            style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; background:#242424;"
+          ></iframe>
+        `;
+      } else if (type === 'media') {
+        const isVideo = meta.media_type === 'video';
+        if (isVideo) {
+          playerInner.innerHTML = `
+            <video 
+              id="local-media-player" 
+              controls 
+              autoplay 
+              style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; background:#000;"
+            >
+              <source src="${fileUrl}">
+            </video>
+          `;
+        } else {
+          playerInner.innerHTML = `
+            <div style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1e1e1e; padding:24px;">
+              <div style="font-size:42px; margin-bottom:12px;">🎙️</div>
+              <div style="font-weight:600; font-size:14.5px; color:var(--text-1); margin-bottom:16px; text-align:center;">${escapeHtml(meta.title || "Audio Lecture")}</div>
+              <audio id="local-media-player" controls autoplay style="width:100%; max-width:440px;">
+                <source src="${fileUrl}">
+              </audio>
+            </div>
+          `;
+        }
+
+        const localPlayer = document.getElementById('local-media-player');
+        if (localPlayer) {
+          localPlayer.ontimeupdate = () => {
+            const cur = localPlayer.currentTime;
+            highlightActiveTranscript(cur);
+            updateActiveChapterPill(cur);
+          };
+        }
+      }
+    }
+
+    async function handleLectureFileUpload(file) {
+      if (!file) return;
+
+      const validExts = ['.pdf', '.mp3', '.wav', '.m4a', '.mp4', '.mkv', '.webm', '.aac', '.flac', '.ogg'];
+      const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      if (!validExts.includes(ext)) {
+        showToast(`Unsupported format: ${ext}. Please use PDF, MP4, or MP3.`);
+        return;
+      }
+
+      // Show upload progress indicator
+      const progressBox = document.getElementById('landing-upload-progress');
+      const statusText = document.getElementById('upload-status-text');
+      if (progressBox) progressBox.style.display = 'block';
+      if (statusText) statusText.innerText = `Processing ${file.name} (Extracting slides/audio)...`;
+
+      const fd = new FormData();
+      fd.append('file', file);
+
+      try {
+        const resp = await fetch('/api/upload-file', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.detail || "Upload processing failed");
+        }
+
+        if (progressBox) progressBox.style.display = 'none';
+
+        // Switch to workspace view
+        showWorkspaceView();
+
+        // Save session state
+        currentVideoId = data.video_id;
+        activeFileUrl = data.file_url;
+        activeMetadata = data.metadata || {};
+        activeSegments = data.segments || [];
+        activeChapters = data.chapters || [];
+        activeSuggestions = data.suggestions || [];
+        currentResourceType = activeMetadata.type === 'pdf' ? 'pdf' : (activeMetadata.type === 'media' ? 'media' : 'youtube');
+        isVideoLoaded = true;
+
+        // Reset notes cache
+        cachedNotesByStyle = { detailed: null, asis: null, short: null };
+        cachedNotesMarkdown = "";
+        const paperCont = document.getElementById('notes-paper-container');
+        const techCont = document.getElementById('notes-tech-container');
+        if (paperCont) {
+          paperCont.innerHTML = `
+            <div style="padding: 40px 20px; text-align: center; color: var(--text-3);">
+              <div style="margin-bottom: 8px; font-weight: 500; color: var(--text-2);">Ready to generate lecture notes</div>
+              <div style="font-size: 12px;">Choose a style above to generate handwritten or markdown notes.</div>
+            </div>
+          `;
+        }
+        if (techCont) techCont.innerHTML = '';
+
+        // Render player or PDF iframe
+        renderResourcePlayer(currentResourceType, activeFileUrl, activeMetadata);
+
+        // Update display titles
+        document.getElementById('display-title').innerText = activeMetadata.title || file.name;
+        document.getElementById('display-author').innerText = activeMetadata.author || "Uploaded Lecture";
+        document.getElementById('display-chunk-stat').innerText = `${activeSegments.length} items`;
+        const chStat = document.getElementById('chapter-count-stat');
+        if (chStat) chStat.innerText = `${activeChapters.length} sections`;
+        const statPill = document.getElementById('index-stat');
+        if (statPill) statPill.innerText = "Ready";
+
+        // Render Chapters & Transcript
+        renderChaptersStrip(activeChapters);
+        renderTranscript(activeSegments);
+
+        // Render Topic Pills & Suggestions
+        renderTopicPills(activeChapters, activeSuggestions);
+        renderExampleQueries(activeSuggestions);
+
+        showToast(`Loaded ${file.name} successfully!`);
+      } catch (err) {
+        if (progressBox) progressBox.style.display = 'none';
+        showToast(`Error: ${err.message}`);
+      }
+    }
+
+    function bindYTPlayerWrapper(iframeId) {
+      if (window.YT && window.YT.Player) {
+        try {
+          if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+            try { ytPlayer.destroy(); } catch(e) {}
+          }
+          ytPlayer = new YT.Player(iframeId, {
+            events: {
+              'onReady': onPlayerReady,
+              'onStateChange': onPlayerStateChange,
+              'onError': onPlayerError
+            }
+          });
+        } catch(e) {
+          console.warn("YouTube API bind notice:", e);
+        }
+      }
+    }
+
+    function indexFromHero() {
+      const input = document.getElementById('hero-url-input');
+      const url = (input ? input.value : "").trim();
+      if (!url) return;
+      
+      const navInput = document.getElementById('video-url-input');
+      if (navInput) navInput.value = url;
+      
+      const vidId = extractClientYoutubeId(url);
+      if (vidId) {
+        showWorkspaceView();
+        loadVideoImmediately(vidId);
+
+        // Instantly reset old data so previous video state doesn't persist
+        activeSegments = [];
+        activeChapters = [];
+        activeSuggestions = [];
+
+        document.getElementById('display-title').innerText = "Loading lecture...";
+        document.getElementById('display-author').innerText = "";
+        document.getElementById('display-chunk-stat').innerText = "Indexing...";
+        const chStat = document.getElementById('chapter-count-stat');
+        if (chStat) chStat.innerText = "";
+        const statPill = document.getElementById('index-stat');
+        if (statPill) statPill.innerText = "Indexing...";
+
+        const chStrip = document.getElementById('chapters-strip');
+        if (chStrip) chStrip.innerHTML = '<div style="font-size:12px; color:var(--text-3); padding:8px 4px;">Analyzing chapters...</div>';
+
+        document.getElementById('transcript-feed').innerHTML = `
+          <div style="padding: 32px 20px; text-align: center; color: var(--text-3); font-size: 13px;">
+            <div style="color: var(--text-1); font-weight: 500; margin-bottom: 6px;">Loading transcript...</div>
+            <div style="color: var(--text-3); font-size: 12px;">Video playback starts instantly above.</div>
+          </div>
+        `;
+
+        const pBar = document.getElementById('topic-pills-bar');
+        if (pBar) pBar.innerHTML = '';
+        renderExampleQueries([]);
+
+        // Fast parallel prefetch of suggestions
+        fetch(`/api/suggestions?video_id=${vidId}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.suggestions && data.suggestions.length > 0 && currentVideoId === vidId) {
+              activeSuggestions = data.suggestions;
+              renderTopicPills(activeChapters, activeSuggestions);
+              renderExampleQueries(activeSuggestions);
+            }
+          })
+          .catch(() => {});
+      } else {
+        showWorkspaceView();
+      }
+
+      indexCurrentVideo();
+    }
+
+    function selectSampleAndOpen(vidId) {
+      const url = `https://www.youtube.com/watch?v=${vidId}`;
+      const heroIn = document.getElementById('hero-url-input');
+      const navIn = document.getElementById('video-url-input');
+      if (heroIn) heroIn.value = url;
+      if (navIn) navIn.value = url;
+      showWorkspaceView();
+      loadVideoImmediately(vidId);
+      indexCurrentVideo();
+    }
+
+    // Clean, robust markdown formatter (Zero external dependencies)
+    function renderMarkdownSafe(text) {
+      if (!text) return "";
+      let html = escapeHtml(text);
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#fff;">$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/`([^`]+)`/g, '<code style="background:var(--bg-subtle);padding:2px 5px;border-radius:3px;font-family:var(--font-mono);font-size:11.5px;color:var(--accent);">$1</code>');
+      html = html.replace(/^&gt;\s*(.*?)$/gm, '<blockquote style="border-left:2px solid var(--accent);padding-left:10px;margin:6px 0;color:var(--text-2);">$1</blockquote>');
+      html = html.replace(/\n\n+/g, '</p><p style="margin-top:8px;">');
+      html = html.replace(/\n/g, '<br>');
+      return `<p>${html}</p>`;
+    }
+
+    // =========================================================================
+    // 1. YOUTUBE IFRAME INITIALIZATION
+    // =========================================================================
+    function onYouTubeIframeAPIReady() {
+      isYtApiReady = true;
+      if (document.getElementById('yt-embed-player')) {
+        bindYTPlayerWrapper('yt-embed-player');
+      }
+    }
+
+    function onPlayerReady() {
+      startTimeTracking();
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        startTimeTracking();
+      }
+    }
+
+    function onPlayerError(event) {
+      console.warn("YouTube Player Event Code:", event.data);
+      if (event.data === 150 || event.data === 101) {
+        showToast("Video restricted by owner. Click 'YouTube' to watch externally.");
+      }
+    }
+
+    // Jump in player (Handles YouTube, Local Media, and PDF Slides)
+    function seekToMoment(seconds) {
+      if (currentResourceType === 'pdf') {
+        const pageNum = Math.max(1, Math.floor(seconds));
+        const pdfFrame = document.getElementById('pdf-viewer-frame');
+        if (pdfFrame && activeFileUrl) {
+          pdfFrame.src = `${activeFileUrl}#page=${pageNum}`;
+        }
+        highlightActiveTranscript(pageNum);
+        updateActiveChapterPill(pageNum);
+        showToast(`Jumped to Slide Page ${pageNum}`);
+        return;
+      }
+
+      if (currentResourceType === 'media') {
+        const localPlayer = document.getElementById('local-media-player');
+        if (localPlayer) {
+          localPlayer.currentTime = seconds;
+          localPlayer.play().catch(() => {});
+          highlightActiveTranscript(seconds);
+          updateActiveChapterPill(seconds);
+          showToast(`Jumped to ${formatSeconds(seconds)}`);
+        }
+        return;
+      }
+
+      const sec = Math.max(0, parseFloat(seconds) || 0);
+      let handled = false;
+
+      if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+        try {
+          ytPlayer.seekTo(sec, true);
+          ytPlayer.playVideo();
+          handled = true;
+        } catch (err) {}
+      }
+
+      if (!handled) {
+        const iframe = document.getElementById('yt-embed-player');
+        if (iframe && iframe.contentWindow) {
+          try {
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: 'seekTo',
+              args: [sec, true]
+            }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: 'playVideo',
+              args: []
+            }), '*');
+          } catch(e) {}
+        }
+      }
+
+      highlightActiveTranscript(sec);
+      updateActiveChapterPill(sec);
+    }
+
+    // Listen to postMessage info delivery directly from YouTube iframe
+    window.addEventListener('message', (event) => {
+      try {
+        if (typeof event.data === 'string') {
+          const data = JSON.parse(event.data);
+          if (data.event === 'infoDelivery' && data.info && typeof data.info.currentTime === 'number') {
+            const currentSec = data.info.currentTime;
+            const durationSec = data.info.duration || 0;
+            const timeStat = document.getElementById('display-time-stat');
+            if (timeStat && durationSec > 0) {
+              timeStat.innerText = `${formatSeconds(currentSec)} / ${formatSeconds(durationSec)}`;
+            }
+            highlightActiveTranscript(currentSec);
+            updateActiveChapterPill(currentSec);
+          }
+        }
+      } catch(e) {}
+    });
+
+    function openExternalYouTube(seconds = null) {
+      if (currentResourceType !== 'youtube' && activeFileUrl) {
+        window.open(activeFileUrl, '_blank');
+        return;
+      }
+      let sec = 0;
+      try {
+        if (seconds !== null) sec = Math.floor(seconds);
+        else if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') sec = Math.floor(ytPlayer.getCurrentTime());
+      } catch(e) {}
+      window.open(`https://www.youtube.com/watch?v=${currentVideoId}&t=${sec}s`, '_blank');
+    }
+
+    function copyCurrentPlaybackUrl() {
+      if (currentResourceType !== 'youtube' && activeFileUrl) {
+        const fullUrl = window.location.origin + activeFileUrl;
+        navigator.clipboard.writeText(fullUrl).then(() => {
+          showToast("Copied lecture file URL");
+        });
+        return;
+      }
+      let sec = 0;
+      try {
+        if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') sec = Math.floor(ytPlayer.getCurrentTime());
+      } catch(e) {}
+      const url = `https://www.youtube.com/watch?v=${currentVideoId}&t=${sec}s`;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast(`Copied timestamp link (${formatSeconds(sec)})`);
+      });
+    }
+
+    function formatSeconds(total_sec) {
+      const secVal = Math.max(0, Math.floor(total_sec || 0));
+      const hrs = Math.floor(secVal / 3600);
+      const mins = Math.floor((secVal % 3600) / 60);
+      const secs = Math.floor(secVal % 60);
+      if (hrs > 0) {
+        return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // =========================================================================
+    // 2. VIDEO INGESTION & VECTOR INDEXING
+    // =========================================================================
+    async function indexCurrentVideo() {
+      const input = document.getElementById('video-url-input');
+      const url = (input ? input.value : "").trim();
+      if (!url) return;
+
+      const vidId = extractClientYoutubeId(url);
+      if (vidId && vidId !== currentVideoId) {
+        loadVideoImmediately(vidId);
+
+        // Instantly reset old state so previous video data is cleared
+        activeSegments = [];
+        activeChapters = [];
+        activeSuggestions = [];
+
+        document.getElementById('display-title').innerText = "Loading lecture...";
+        document.getElementById('display-author').innerText = "";
+        document.getElementById('display-chunk-stat').innerText = "Indexing...";
+        const chStat = document.getElementById('chapter-count-stat');
+        if (chStat) chStat.innerText = "";
+        const statPill = document.getElementById('index-stat');
+        if (statPill) statPill.innerText = "Indexing...";
+
+        const chStrip = document.getElementById('chapters-strip');
+        if (chStrip) chStrip.innerHTML = '<div style="font-size:12px; color:var(--text-3); padding:8px 4px;">Analyzing chapters...</div>';
+
+        document.getElementById('transcript-feed').innerHTML = `
+          <div style="padding: 32px 20px; text-align: center; color: var(--text-3); font-size: 13px;">
+            <div style="color: var(--text-1); font-weight: 500; margin-bottom: 6px;">Loading transcript...</div>
+            <div style="color: var(--text-3); font-size: 12px;">Video playback starts instantly above.</div>
+          </div>
+        `;
+
+        const pBar = document.getElementById('topic-pills-bar');
+        if (pBar) pBar.innerHTML = '';
+        renderExampleQueries([]);
+
+        // Prefetch suggestions
+        fetch(`/api/suggestions?video_id=${vidId}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.suggestions && data.suggestions.length > 0 && currentVideoId === vidId) {
+              activeSuggestions = data.suggestions;
+              renderTopicPills(activeChapters, activeSuggestions);
+              renderExampleQueries(activeSuggestions);
+            }
+          })
+          .catch(() => {});
+      }
+
+      const btn = document.getElementById('btn-index');
+      if (btn) {
+        btn.innerText = 'Indexing...';
+        btn.disabled = true;
+      }
+      const statPill = document.getElementById('index-stat');
+      if (statPill) statPill.innerText = "Indexing...";
+
+      try {
+        const resp = await fetch('/api/index', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url })
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+          currentVideoId = data.video_id;
+          activeSegments = data.segments || [];
+          activeChapters = data.chapters || [];
+          activeMetadata = data.metadata || {};
+          activeSuggestions = data.suggestions || [];
+
+          isVideoLoaded = true;
+          showWorkspaceView();
+          
+          // Ensure player matches current video
+          const activeIframe = document.getElementById('yt-embed-player');
+          if (!activeIframe || !activeIframe.src.includes(currentVideoId)) {
+            loadVideoImmediately(currentVideoId);
+          }
+
+          // Update UI
+          document.getElementById('display-title').innerText = activeMetadata.title || `Video (${currentVideoId})`;
+          document.getElementById('display-author').innerText = activeMetadata.author || "YouTube Creator";
+          document.getElementById('display-chunk-stat').innerText = `${activeSegments.length} timestamps`;
+          document.getElementById('chapter-count-stat').innerText = `${activeChapters.length} chapters`;
+          if (statPill) statPill.innerText = `Ready`;
+
+          renderChapters(activeChapters);
+          renderTranscript(activeSegments);
+          renderTopicPills(activeChapters, activeSuggestions);
+          renderExampleQueries(activeSuggestions);
+
+          showToast(`Ready! ${activeSegments.length} moments indexed.`);
+        }
+      } catch (err) {
+        showToast('Error indexing video: ' + err);
+        if (statPill) statPill.innerText = `Ready`;
+      } finally {
+        if (btn) {
+          btn.innerText = 'Open';
+          btn.disabled = false;
+        }
+      }
+    }
+
+    // =========================================================================
+    // 3. CHAPTERS & TRANSCRIPT RENDERING
+    // =========================================================================
+    function renderChapters(chapters) {
+      const container = document.getElementById('chapters-strip');
+      container.innerHTML = '';
+      chapters.forEach((chap, idx) => {
+        const chip = document.createElement('div');
+        chip.className = `chapter-item ${idx === 0 ? 'active' : ''}`;
+        chip.dataset.start = chap.start_sec;
+        chip.dataset.end = chap.end_sec;
+        chip.innerHTML = `
+          <span class="chapter-time">${chap.time_str}</span>
+          <span>${escapeHtml(chap.title)}</span>
+        `;
+        chip.onclick = () => seekToMoment(chap.start_sec);
+        container.appendChild(chip);
+      });
+    }
+
+    function renderTranscript(segments) {
+      const container = document.getElementById('transcript-feed');
+      container.innerHTML = '';
+
+      segments.forEach((seg, idx) => {
+        const row = document.createElement('div');
+        row.className = 'transcript-row-item';
+        row.id = `trans-row-${idx}`;
+        row.dataset.start = seg.start_sec;
+        row.dataset.end = seg.end_sec;
+        row.dataset.text = (seg.text || '').toLowerCase();
+
+        row.innerHTML = `
+          <span class="row-timestamp">${seg.time_str}</span>
+          <span>${escapeHtml(seg.text)}</span>
+        `;
+        row.onclick = () => seekToMoment(seg.start_sec);
+        container.appendChild(row);
+      });
+    }
+
+    function filterTranscript(term) {
+      const query = (term || '').trim().toLowerCase();
+      const container = document.getElementById('transcript-feed');
+      const oldBridge = document.getElementById('transcript-search-bridge');
+      if (oldBridge) oldBridge.remove();
+
+      let visibleCount = 0;
+      document.querySelectorAll('.transcript-row-item').forEach(row => {
+        if (!query || row.dataset.text.includes(query)) {
+          row.style.display = 'flex';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      // Bridge to Search when user filters
+      if (query.length >= 2) {
+        const bridge = document.createElement('div');
+        bridge.className = 'transcript-search-bridge';
+        bridge.id = 'transcript-search-bridge';
+        bridge.innerHTML = `
+          <div style="display:flex; align-items:center; gap:6px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Search video for <strong>"${escapeHtml(term)}"</strong></span>
+          </div>
+          <span style="font-size:11px; font-weight:500; color:var(--accent);">Search ↗</span>
+        `;
+        bridge.onclick = () => {
+          quickAsk(term);
+        };
+        container.prepend(bridge);
+      }
+    }
+
+    function toggleAutoScroll() {
+      autoScrollEnabled = !autoScrollEnabled;
+      const btn = document.getElementById('btn-autoscroll');
+      btn.style.color = autoScrollEnabled ? 'var(--accent)' : 'var(--text-3)';
+      showToast(`Auto-scroll ${autoScrollEnabled ? 'enabled' : 'disabled'}`);
+    }
+
+    // =========================================================================
+    // 4. SYNCHRONIZED TIME TRACKER
+    // =========================================================================
+    function startTimeTracking() {
+      if (timeUpdateInterval) clearInterval(timeUpdateInterval);
+      timeUpdateInterval = setInterval(() => {
+        try {
+          if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+          const currentSec = ytPlayer.getCurrentTime();
+          if (typeof currentSec !== 'number' || isNaN(currentSec)) return;
+
+          const durationSec = (ytPlayer.getDuration && typeof ytPlayer.getDuration === 'function') ? ytPlayer.getDuration() : 1261;
+
+          const timeStat = document.getElementById('display-time-stat');
+          if (timeStat) {
+            timeStat.innerText = `${formatSeconds(currentSec)} / ${formatSeconds(durationSec)}`;
+          }
+
+          highlightActiveTranscript(currentSec);
+          updateActiveChapterPill(currentSec);
+        } catch(e) {}
+      }, 500);
+    }
+
+    function highlightActiveTranscript(sec) {
+      const rows = document.querySelectorAll('.transcript-row-item');
+      rows.forEach(row => {
+        const start = parseFloat(row.dataset.start);
+        const end = parseFloat(row.dataset.end);
+        if (sec >= start && sec < end) {
+          if (!row.classList.contains('active-moment')) {
+            rows.forEach(r => r.classList.remove('active-moment'));
+            row.classList.add('active-moment');
+            if (autoScrollEnabled) {
+              row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          }
+        }
+      });
+    }
+
+    function updateActiveChapterPill(sec) {
+      const chips = document.querySelectorAll('.chapter-item');
+      chips.forEach(chip => {
+        const start = parseFloat(chip.dataset.start);
+        const end = parseFloat(chip.dataset.end);
+        if (sec >= start && sec <= end) {
+          chips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        }
+      });
+    }
+
+    // =========================================================================
+    // 5. SEARCH, AUTOCOMPLETE & CONCEPT Q&A
+    // =========================================================================
+    function handleQueryInput(val) {
+      const q = (val || "").trim().toLowerCase();
+      const popover = document.getElementById("autocomplete-popover");
+      selectedSuggestionIndex = -1;
+
+      if (!q) {
+        showDefaultSuggestions();
+        return;
+      }
+
+      currentFilteredSuggestions = filterSuggestions(q);
+      if (currentFilteredSuggestions.length === 0) {
+        popover.style.display = "none";
+        return;
+      }
+
+      renderSuggestionsList(currentFilteredSuggestions, q);
+      popover.style.display = "flex";
+    }
+
+    function handleQueryFocus() {
+      const input = document.getElementById("query-input");
+      const val = (input ? input.value : "").trim();
+      if (!val) {
+        showDefaultSuggestions();
+      } else {
+        handleQueryInput(val);
+      }
+    }
+
+    function showDefaultSuggestions() {
+      const popover = document.getElementById("autocomplete-popover");
+      if (!popover) return;
+      const title = document.getElementById("popover-title");
+      if (title) title.innerText = "Suggested searches";
+
+      if (activeSuggestions && activeSuggestions.length > 0) {
+        currentFilteredSuggestions = activeSuggestions.slice(0, 8);
+      } else {
+        const dyn = [];
+        if (activeChapters && activeChapters.length > 0) {
+          activeChapters.slice(0, 6).forEach(c => {
+            if (c.title && !c.title.startsWith("Topic Section")) {
+              dyn.push(`Where is ${c.title} explained?`);
+            }
+          });
+        }
+        const titleText = (document.getElementById('display-title') ? document.getElementById('display-title').innerText : "").trim();
+        if (titleText && !titleText.includes("Loading") && !titleText.includes("Lecture Video")) {
+          const clean = titleText.replace(/^(?:L\d+[\.\s:]*|Lecture\s*\d+[\.\s:]*)/i, '').split('|')[0].trim();
+          if (clean) {
+            dyn.push(`What is ${clean}?`);
+            dyn.push(`How does ${clean} work?`);
+            dyn.push(`Key concepts in ${clean}`);
+          }
+        }
+        currentFilteredSuggestions = dyn.length > 0 ? dyn.slice(0, 8) : [
+          "What are the core concepts covered?",
+          "Where is the code walkthrough?",
+          "Time and space complexity",
+          "Summary of this lecture"
+        ];
+      }
+
+      renderSuggestionsList(currentFilteredSuggestions, "");
+      popover.style.display = "flex";
+    }
+
+    function filterSuggestions(query) {
+      let pool = activeSuggestions;
+      if (!pool || pool.length === 0) {
+        const dyn = [];
+        if (activeChapters && activeChapters.length > 0) {
+          activeChapters.forEach(c => {
+            if (c.title && !c.title.startsWith("Topic Section")) {
+              dyn.push(c.title);
+              dyn.push(`Where is ${c.title} explained?`);
+            }
+          });
+        }
+        const titleText = (document.getElementById('display-title') ? document.getElementById('display-title').innerText : "").trim();
+        if (titleText && !titleText.includes("Loading") && !titleText.includes("Lecture Video")) {
+          const clean = titleText.replace(/^(?:L\d+[\.\s:]*|Lecture\s*\d+[\.\s:]*)/i, '').split('|')[0].trim();
+          if (clean) {
+            dyn.push(clean);
+            dyn.push(`What is ${clean}?`);
+            dyn.push(`How does ${clean} work?`);
+          }
+        }
+        pool = dyn;
+      }
+      if (!pool || pool.length === 0) return [];
+
+      const q = query.toLowerCase();
+      const prefix = pool.filter(s => s.toLowerCase().startsWith(q));
+      const sub = pool.filter(s => !s.toLowerCase().startsWith(q) && s.toLowerCase().includes(q));
+      const words = q.split(" ").filter(w => w.length > 2);
+      const keyword = pool.filter(s => {
+        if (prefix.includes(s) || sub.includes(s)) return false;
+        return words.some(w => s.toLowerCase().includes(w));
+      });
+
+      return [...prefix, ...sub, ...keyword].slice(0, 8);
+    }
+
+    function renderSuggestionsList(items, query) {
+      const list = document.getElementById("autocomplete-list");
+      if (!list) return;
+      list.innerHTML = "";
+
+      items.forEach((item, idx) => {
+        const div = document.createElement("div");
+        div.className = "popover-item";
+        div.dataset.index = idx;
+
+        let textHtml = escapeHtml(item);
+        if (query) {
+          const regex = new RegExp(`(${escapeRegex(query)})`, "gi");
+          textHtml = textHtml.replace(regex, '<span class="match-highlight">$1</span>');
+        }
+
+        div.innerHTML = `
+          <span class="popover-item-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <span style="flex:1;">${textHtml}</span>
+          <span style="color:var(--text-3); font-size:10px; font-family:var(--font-mono);">↵</span>
+        `;
+
+        div.onmousedown = (e) => {
+          e.preventDefault();
+          selectSuggestion(item);
+        };
+
+        div.onmouseenter = () => {
+          highlightSuggestionIndex(idx, false);
+        };
+
+        list.appendChild(div);
+      });
+    }
+
+    function handleQueryKeydown(e) {
+      const popover = document.getElementById("autocomplete-popover");
+      const isVisible = popover && popover.style.display !== "none";
+
+      if (e.key === "ArrowDown") {
+        if (!isVisible) {
+          showDefaultSuggestions();
+          return;
+        }
+        e.preventDefault();
+        highlightSuggestionIndex(selectedSuggestionIndex + 1, true);
+      } else if (e.key === "ArrowUp") {
+        if (!isVisible) return;
+        e.preventDefault();
+        highlightSuggestionIndex(selectedSuggestionIndex - 1, true);
+      } else if (e.key === "Enter") {
+        if (isVisible && selectedSuggestionIndex >= 0 && selectedSuggestionIndex < currentFilteredSuggestions.length) {
+          e.preventDefault();
+          selectSuggestion(currentFilteredSuggestions[selectedSuggestionIndex]);
+        } else {
+          closeSuggestions();
+          sendSearchQuery();
+        }
+      } else if (e.key === "Escape") {
+        closeSuggestions();
+      }
+    }
+
+    function highlightSuggestionIndex(idx, updateInput = false) {
+      const items = document.querySelectorAll(".popover-item");
+      if (items.length === 0) return;
+
+      if (idx < 0) idx = items.length - 1;
+      if (idx >= items.length) idx = 0;
+
+      selectedSuggestionIndex = idx;
+      items.forEach((it, i) => {
+        if (i === idx) {
+          it.classList.add("active-item");
+          it.scrollIntoView({ block: "nearest" });
+          if (updateInput && currentFilteredSuggestions[idx]) {
+            document.getElementById("query-input").value = currentFilteredSuggestions[idx];
+          }
+        } else {
+          it.classList.remove("active-item");
+        }
+      });
+    }
+
+    function selectSuggestion(item) {
+      document.getElementById("query-input").value = item;
+      closeSuggestions();
+      sendSearchQuery();
+    }
+
+    function closeSuggestions() {
+      const popover = document.getElementById("autocomplete-popover");
+      if (popover) popover.style.display = "none";
+      selectedSuggestionIndex = -1;
+    }
+
+    function escapeRegex(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Close popover when clicking anywhere outside
+    document.addEventListener("click", (e) => {
+      const wrapper = document.querySelector(".search-input-wrapper");
+      if (wrapper && !wrapper.contains(e.target)) {
+        closeSuggestions();
+      }
+    });
+
+    function renderTopicPills(chapters, suggestions) {
+      const bar = document.getElementById('topic-pills-bar');
+      if (!bar) return;
+      bar.innerHTML = '';
+
+      const topics = [];
+      (chapters || []).forEach(c => {
+        const t = (c.title || '').split(':')[0].trim();
+        if (t && t.length < 32 && !t.startsWith("Topic Section") && !topics.includes(t)) {
+          topics.push(t);
+        }
+      });
+
+      // Supplement with short topic concepts from suggestions if needed
+      if (topics.length < 6 && suggestions) {
+        suggestions.forEach(s => {
+          if (!s.includes('?') && s.length < 28 && !topics.includes(s)) {
+            topics.push(s);
+          }
+        });
+      }
+
+      topics.slice(0, 6).forEach(topic => {
+        const pill = document.createElement('div');
+        pill.className = 'topic-pill';
+        pill.innerText = topic;
+        pill.onclick = () => quickAsk(topic);
+        bar.appendChild(pill);
+      });
+    }
+
+    function renderExampleQueries(suggestions) {
+      const box = document.getElementById('example-queries-box');
+      if (!box) return;
+
+      let items = [];
+      if (suggestions && suggestions.length > 0) {
+        items = suggestions.filter(s => s.includes('?')).slice(0, 3);
+        if (items.length === 0) items = suggestions.slice(0, 3);
+      }
+
+      if (items.length === 0) {
+        const titleText = (document.getElementById('display-title') ? document.getElementById('display-title').innerText : "").trim();
+        if (titleText && !titleText.includes("Loading") && !titleText.includes("Lecture Video")) {
+          const clean = titleText.replace(/^(?:L\d+[\.\s:]*|Lecture\s*\d+[\.\s:]*)/i, '').split('|')[0].trim();
+          items = [
+            `What is ${clean}?`,
+            `How does ${clean} work?`,
+            `Where is ${clean} explained?`
+          ];
+        } else {
+          items = [
+            'What are the core concepts covered in this video?',
+            'Where is the step-by-step walkthrough?',
+            'Summary and key takeaways'
+          ];
+        }
+      }
+
+      box.innerHTML = items.map(q => `
+        <div class="example-query-btn" onclick="quickAsk('${escapeHtml(q)}')">
+          <span>${escapeHtml(q)}</span>
+          <span style="color:var(--text-3);">↗</span>
+        </div>
+      `).join('');
+    }
+
+    async function sendSearchQuery() {
+      const input = document.getElementById('query-input');
+      const query = input.value.trim();
+      if (!query) return;
+
+      closeSuggestions();
+
+      // Hide empty state if visible
+      const emptyState = document.getElementById('chat-empty-state');
+      if (emptyState) emptyState.style.display = 'none';
+
+      appendUserBubble(query);
+      input.value = '';
+
+      const btn = document.getElementById('btn-ask');
+      btn.disabled = true;
+
+      try {
+        const resp = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_id: currentVideoId, query: query })
+        });
+        const data = await resp.json();
+        appendAiBubble(data);
+      } catch (err) {
+        appendAiBubble({
+          answer: 'Unable to retrieve answer: ' + err,
+          primary_timestamp: '00:00',
+          primary_seconds: 0,
+          citations: []
+        });
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function quickAsk(q) {
+      switchTab('search');
+      const input = document.getElementById('query-input');
+      if (input) input.value = q;
+      sendSearchQuery();
+    }
+
+    function appendUserBubble(text) {
+      const stream = document.getElementById('chat-stream');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'chat-message-group';
+      wrapper.innerHTML = `<div class="user-msg">${escapeHtml(text)}</div>`;
+      stream.appendChild(wrapper);
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function appendAiBubble(data) {
+      const stream = document.getElementById('chat-stream');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'chat-message-group';
+
+      const sec = Math.floor(data.primary_seconds || 0);
+      const isYt = currentResourceType === 'youtube';
+      const directUrl = isYt ? `https://www.youtube.com/watch?v=${currentVideoId}&t=${sec}s` : (activeFileUrl || '#');
+
+      const formattedAnswer = renderMarkdownSafe(data.answer || "");
+
+      wrapper.innerHTML = `
+        <div class="ai-msg">
+          <div>${formattedAnswer}</div>
+
+          <div class="ai-timestamp-box">
+            <span style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-2);">
+              At <strong style="color:var(--accent);">${data.primary_timestamp}</strong>
+            </span>
+
+            <div style="display:flex; gap:6px;">
+              <button class="timestamp-btn-seek" onclick="seekToMoment(${data.primary_seconds})">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Jump to ${data.primary_timestamp}</span>
+              </button>
+              <a href="${directUrl}" target="_blank" class="btn-action">
+                <span>${isYt ? 'YouTube ↗' : 'View File ↗'}</span>
+              </a>
+              <button class="btn-action" onclick="navigator.clipboard.writeText('${directUrl}'); showToast('Copied link');">
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      stream.appendChild(wrapper);
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    // =========================================================================
+    // 6. STUDY NOTES & HANDWRITTEN NOTEBOOK
+    // =========================================================================
+    function switchNotesStyle(style) {
+      if (!style) style = 'detailed';
+      currentNotesStyle = style;
+
+      document.querySelectorAll('.notes-style-pill').forEach(p => p.classList.remove('active'));
+      const pill = document.getElementById(`pill-style-${style}`);
+      if (pill) pill.classList.add('active');
+
+      const cacheKey = `${style}_${currentNotesLanguage || 'en'}`;
+      if (cachedNotesByLang[cacheKey]) {
+        renderCurrentNotes(cachedNotesByLang[cacheKey]);
+      } else {
+        loadStudyNotes(style, currentNotesLanguage || 'en');
+      }
+    }
+
+    function switchNotesView(view) {
+      currentNotesView = view;
+      const btnPaper = document.getElementById('btn-view-paper');
+      const btnTech = document.getElementById('btn-view-tech');
+      const paperCont = document.getElementById('notes-paper-container');
+      const techCont = document.getElementById('notes-tech-container');
+
+      if (view === 'paper') {
+        if (btnPaper) btnPaper.classList.add('active');
+        if (btnTech) btnTech.classList.remove('active');
+        if (paperCont) paperCont.style.display = 'block';
+        if (techCont) techCont.style.display = 'none';
+      } else {
+        if (btnPaper) btnPaper.classList.remove('active');
+        if (btnTech) btnTech.classList.add('active');
+        if (paperCont) paperCont.style.display = 'none';
+        if (techCont) techCont.style.display = 'block';
+      }
+    }
+
+    function formatHandwrittenText(str) {
+      if (!str) return '';
+      let escaped = escapeHtml(String(str));
+      // Convert markdown **text** to <mark>text</mark> yellow highlighter
+      return escaped.replace(/\*\*(.+?)\*\*/g, '<mark>$1</mark>');
+    }
+
+    function renderCurrentNotes(data) {
+      if (!data) return;
+      const paperCont = document.getElementById('notes-paper-container');
+      const techCont = document.getElementById('notes-tech-container');
+
+      const title = data.title || "Lecture Notes";
+      const summary = data.summary || "";
+      const sections = data.sections || [];
+
+      // 1. Render Notebook Paper
+      if (paperCont) {
+        let sectionsHtml = "";
+        sections.forEach((sec, idx) => {
+          const timeBadge = sec.time_str || formatSeconds(sec.start || 0);
+          const startSec = Math.floor(sec.start || 0);
+
+          let boxHtml = "";
+          if (sec.box) {
+            boxHtml = `<div class="box">${formatHandwrittenText(sec.box)}</div>`;
+          }
+
+          let pointsHtml = "";
+          (sec.points || []).forEach(p => {
+            const pStr = String(p).trim();
+            const isSubStep = pStr.startsWith("↳") || pStr.startsWith("->");
+            const cleanP = pStr.replace(/^[↳\->\s]+/, '');
+            if (isSubStep) {
+              pointsHtml += `
+                <li class="sub-step">
+                  <span class="bullet-sym">↳</span>
+                  <span>${formatHandwrittenText(cleanP)}</span>
+                </li>
+              `;
+            } else {
+              pointsHtml += `
+                <li>
+                  <span class="bullet-sym">-</span>
+                  <span>${formatHandwrittenText(cleanP)}</span>
+                </li>
+              `;
+            }
+          });
+
+          sectionsHtml += `
+            <section>
+              <a class="mark-time" onclick="seekToMoment(${startSec}); return false;" title="Jump video to ${timeBadge}">${timeBadge}</a>
+              <h3>${escapeHtml(sec.heading || `Section ${idx + 1}`)}</h3>
+              ${boxHtml}
+              <ul>
+                ${pointsHtml}
+              </ul>
+            </section>
+          `;
+        });
+
+        paperCont.innerHTML = `
+          <article class="paper">
+            <h2>${escapeHtml(title)}</h2>
+            ${summary ? `<p class="sum">${escapeHtml(summary)}</p>` : ''}
+            ${sectionsHtml}
+          </article>
+        `;
+      }
+
+      // 2. Render Clean Tech Markdown
+      if (techCont) {
+        techCont.innerHTML = renderMarkdownSafe(data.markdown || "");
+      }
+    }
+
+    async function loadStudyNotes(style = currentNotesStyle, lang = currentNotesLanguage) {
+      if (!currentVideoId) {
+        showToast("Load a video first to create notes");
+        return;
+      }
+      if (isGeneratingNotes) return;
+      isGeneratingNotes = true;
+
+      // Default language is 'en' (English) if none selected
+      const targetLang = (lang || currentNotesLanguage || 'en').toLowerCase().trim();
+      currentNotesLanguage = targetLang;
+      currentNotesStyle = style;
+
+      const cacheKey = `${style}_${targetLang}`;
+      if (cachedNotesByLang[cacheKey]) {
+        renderCurrentNotes(cachedNotesByLang[cacheKey]);
+        isGeneratingNotes = false;
+        return;
+      }
+
+      const paperCont = document.getElementById('notes-paper-container');
+      const techCont = document.getElementById('notes-tech-container');
+
+      const styleLabel = style === 'asis' ? 'Teacher-Verbatim' : (style === 'short' ? 'Cheat Sheet' : 'Detailed');
+      const langLabel = targetLang === 'en' ? '' : ` (${targetLang.toUpperCase()})`;
+      const loadingHtml = `
+        <div style="padding: 48px 24px; text-align: center; color: var(--text-3);">
+          <div style="width: 28px; height: 28px; border: 2.5px solid var(--accent); border-top-color: transparent; border-radius: 50%; margin: 0 auto 12px; animation: spinNotes 0.8s linear infinite;"></div>
+          <div style="font-weight: 500; color: var(--text-1); font-size: 13.5px; margin-bottom: 4px;">Synthesizing ${styleLabel}${langLabel} Notes...</div>
+          <div style="font-size: 12px; color: var(--text-3);">Extracting key formulas, dry-runs, and timeline sync</div>
+        </div>
+      `;
+      if (paperCont) paperCont.innerHTML = loadingHtml;
+      if (techCont) techCont.innerHTML = loadingHtml;
+
+      try {
+        const resp = await fetch('/api/generate-notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ video_id: currentVideoId, style: style, language: targetLang })
+        });
+        const data = await resp.json();
+        cachedNotesByLang[cacheKey] = data;
+        cachedNotesByStyle[style] = data;
+        cachedNotesMarkdown = data.markdown || "";
+        renderCurrentNotes(data);
+      } catch (err) {
+        const errHtml = `
+          <div style="padding: 32px 20px; text-align: center; color: #ef4444;">
+            <div style="font-weight: 600; margin-bottom: 6px;">Failed to generate notes</div>
+            <div style="font-size: 12px; color: var(--text-3); margin-bottom: 12px;">${escapeHtml(String(err))}</div>
+            <button class="notes-action-btn" onclick="loadStudyNotes('${style}', '${targetLang}')" style="margin: 0 auto;">Try Again</button>
+          </div>
+        `;
+        if (paperCont) paperCont.innerHTML = errHtml;
+        if (techCont) techCont.innerHTML = errHtml;
+      } finally {
+        isGeneratingNotes = false;
+      }
+    }
+
+    function toggleLangDropdown(event) {
+      if (event) event.stopPropagation();
+      const menu = document.getElementById('lang-dropdown-menu');
+      if (menu) {
+        menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'block' : 'none';
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('lang-dropdown-menu');
+      if (menu && menu.style.display !== 'none' && !e.target.closest('#btn-lang-selector') && !e.target.closest('#lang-dropdown-menu')) {
+        menu.style.display = 'none';
+      }
+    });
+
+    function selectNotesLanguage(code, name) {
+      const menu = document.getElementById('lang-dropdown-menu');
+      if (menu) menu.style.display = 'none';
+
+      document.querySelectorAll('.lang-opt-item').forEach(el => el.classList.remove('active'));
+      const activeOpt = document.querySelector(`.lang-opt-item[data-lang="${code}"]`);
+      if (activeOpt) activeOpt.classList.add('active');
+
+      const textEl = document.getElementById('current-lang-text');
+      if (textEl) textEl.innerText = name.split(' ')[0];
+
+      currentNotesLanguage = code || 'en';
+      showToast(`Notes language: ${name}`);
+      loadStudyNotes(currentNotesStyle, currentNotesLanguage);
+    }
+
+    function copyNotesToClipboard() {
+      const activeData = cachedNotesByStyle[currentNotesStyle];
+      const text = (activeData && activeData.markdown) ? activeData.markdown : cachedNotesMarkdown;
+      if (!text) {
+        showToast("Generate notes first...");
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Copied notes to clipboard");
+      });
+    }
+
+    function downloadNotesMarkdown() {
+      const activeData = cachedNotesByStyle[currentNotesStyle];
+      const markdown = (activeData && activeData.markdown) ? activeData.markdown : cachedNotesMarkdown;
+      if (!markdown) {
+        showToast("Generating notes first...");
+        loadStudyNotes(currentNotesStyle).then(() => downloadNotesMarkdown());
+        return;
+      }
+      const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ChronoVideo_${currentVideoId}_${currentNotesStyle}_Notes.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Downloaded Markdown notes");
+    }
+
+    async function downloadRuledNotesPdf() {
+      if (!currentVideoId) {
+        showToast("Load a lecture first to export notes");
+        return;
+      }
+
+      // If notes not yet loaded for this style, load first
+      if (!cachedNotesByStyle[currentNotesStyle]) {
+        showToast("Generating notes first...");
+        await loadStudyNotes(currentNotesStyle);
+      }
+
+      const btnTop = document.getElementById('btn-export-top');
+      const btnInner = document.getElementById('btn-export-pdf');
+      const origTopHtml = btnTop ? btnTop.innerHTML : '';
+      const origInnerHtml = btnInner ? btnInner.innerHTML : '';
+
+      const spinHtml = `
+        <div style="width:11px; height:11px; border:2px solid var(--accent); border-top-color:transparent; border-radius:50%; animation:spinNotes 0.8s linear infinite; display:inline-block; vertical-align:middle; margin-right:4px;"></div>
+        <span>Building PDF...</span>
+      `;
+
+      if (btnTop) { btnTop.disabled = true; btnTop.innerHTML = spinHtml; }
+      if (btnInner) { btnInner.disabled = true; btnInner.innerHTML = spinHtml; }
+
+      showToast("Compiling ruled notebook PDF...");
+
+      try {
+        const title = (activeMetadata && activeMetadata.title) ? activeMetadata.title : "";
+        const author = (activeMetadata && activeMetadata.author) ? activeMetadata.author : "";
+
+        const resp = await fetch('/api/export-notes-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            video_id: currentVideoId,
+            style: currentNotesStyle,
+            language: currentNotesLanguage || 'en',
+            title: title,
+            instructor: author
+          })
+        });
+
+        if (!resp.ok) {
+          throw new Error(`PDF endpoint returned ${resp.status}`);
+        }
+
+        const blob = await resp.blob();
+        let filename = `ChronoVideo_${currentVideoId}_${currentNotesStyle}_Notes.pdf`;
+        const disposition = resp.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+
+        showToast("Downloaded Ruled Notebook PDF!");
+      } catch (err) {
+        console.error("Direct PDF download failed, using browser print:", err);
+        showToast("Opening print view for PDF export...");
+        printNotes();
+      } finally {
+        if (btnTop) { btnTop.disabled = false; btnTop.innerHTML = origTopHtml; }
+        if (btnInner) { btnInner.disabled = false; btnInner.innerHTML = origInnerHtml; }
+      }
+    }
+
+    function downloadMarkdownFile() {
+      downloadRuledNotesPdf();
+    }
+
+    function printNotes() {
+      if (!cachedNotesByStyle[currentNotesStyle]) {
+        showToast("Generating notes first before printing...");
+        loadStudyNotes(currentNotesStyle).then(() => {
+          switchNotesView('paper');
+          setTimeout(() => window.print(), 300);
+        });
+        return;
+      }
+      switchNotesView('paper');
+      setTimeout(() => window.print(), 100);
+    }
+
+    // =========================================================================
+    // 7. TAB SWITCHING
+    // =========================================================================
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-body').forEach(v => v.classList.remove('active'));
+
+      const btn = document.getElementById(`tab-${tabName}-btn`);
+      const view = document.getElementById(`view-${tabName}`);
+      if (btn) btn.classList.add('active');
+      if (view) view.classList.add('active');
+
+      if (tabName === 'notes' && !cachedNotesByStyle[currentNotesStyle]) {
+        loadStudyNotes(currentNotesStyle);
+      }
+    }
+
+    // =========================================================================
+    // 8. SAMPLE VIDEOS MODAL
+    // =========================================================================
+    async function openLibraryModal() {
+      const modal = document.getElementById('library-modal');
+      const list = document.getElementById('sample-lectures-list');
+      modal.style.display = 'flex';
+
+      try {
+        const resp = await fetch('/api/sample-lectures');
+        const lectures = await resp.json();
+        list.innerHTML = lectures.map(l => `
+          <div class="sample-row" onclick="selectSampleLecture('${l.id}')">
+            <div>
+              <div style="font-weight:600; font-size:13px; color:var(--text-1);">${escapeHtml(l.title)}</div>
+              <div style="font-size:11.5px; color:var(--text-3); margin-top:2px;">${escapeHtml(l.instructor)} • ${l.duration}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent);"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = '<div style="color:var(--text-3);">Failed to load samples.</div>';
+      }
+    }
+
+    function closeLibraryModal() {
+      document.getElementById('library-modal').style.display = 'none';
+    }
+
+    function selectSampleLecture(vidId) {
+      closeLibraryModal();
+      selectSampleAndOpen(vidId);
+    }
+
+    // =========================================================================
+    // 9. TOAST NOTIFICATIONS
+    // =========================================================================
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast-item';
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 200);
+      }, 2400);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return "";
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Initialize on page load (Default to clean Landing Hero experience)
+    window.onload = () => {
+      showLandingView();
+    };
+  </script>
+</body>
+</html>
